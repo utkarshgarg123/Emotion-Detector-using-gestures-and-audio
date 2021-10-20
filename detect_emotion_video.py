@@ -108,7 +108,7 @@ print("[INFO] loading face detector model...")
 prototxtPath = os.path.sep.join([FACE_MODEL_PATH, "deploy.prototxt"])
 weightsPath = os.path.sep.join(
     [FACE_MODEL_PATH, "res10_300x300_ssd_iter_140000.caffemodel"])
-faceNet = cv2.dnn.readNet(prototxtPath, weightsPath)
+# faceNet = cv2.dnn.readNet(prototxtPath, weightsPath)
 
 # load the face mask detector model from disk
 print("[INFO] loading emotion detector model...")
@@ -130,17 +130,17 @@ if not cap.isOpened():
 while True:
     ret, frame = cap.read()
 
-# img = cv2.imread("mypic2.jpg")
+# main function
     detector = FER()
     detector.detect_emotions(frame)
     result = DeepFace.analyze(frame, actions=['emotion'])
-
+#
 
 
     # result =  face_processor(frame, faceNet, maskNet,threshold)
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-    (locs, preds) = detect_and_predict_mask(frame, faceNet, maskNet, 0.5)
+    # (locs, preds) = detect_and_predict_mask(frame, faceNet, maskNet, 0.5)
 
         
     
@@ -158,13 +158,16 @@ while True:
 
     for(x, y, w, h) in faces:
         cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+        cv2.rectangle(frame, (x-150, y-10), (x+w+200, y+h+200), (0, 255, 0), 2)
+
+    # cv2.rectangle(frame, (50, 50), (100, 100), (0, 255, 0), 2)
 
     font = cv2.FONT_HERSHEY_SIMPLEX
 
      # print(result)
     final_result = weighted_average(speech_result,result)
     print('[DETECTED EMOTION] : ' , final_result['emotion'])
-    print('DOMINANT EMOTION : ' , final_result['dominant_emotion'])
+    print('[DOMINANT EMOTION] : ' , final_result['dominant_emotion'] , ' ' , final_result['emotion'][final_result['dominant_emotion']])
 
 
     cv2.putText(frame,
