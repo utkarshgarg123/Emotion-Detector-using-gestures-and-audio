@@ -4,7 +4,7 @@ from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.models import load_model
 from imutils.video import VideoStream
 from speech.speechemotionrecognition import model_classes
-from speech.examples.Speech_reciever import Speech_reciever
+from speech.examples.Speech_reciever import Body_reciever, Speech_reciever
 # from pygame import mixer
 import numpy as np
 import imutils
@@ -12,6 +12,9 @@ import time
 import cv2
 import os
 import sounddevice as sd
+from body_processor import *
+from face_processor import *
+body_result = Body_reciever()
 from scipy.io.wavfile import write
 
 
@@ -78,23 +81,24 @@ def detect_and_predict_mask(frame, faceNet, maskNet, threshold):
 
 
 
-def weighted_average(speech_result, result):
+def weighted_average(speech_result, body_result , result):
     temp = {'emotion': {'angry': 0, 'disgust': 0, 'fear': 0, 'happy': 0, 'sad': 0, 'surprise': 0 , 'neutral': 0 }, 'dominant_emotion': 'neutral'}
-    temp['emotion']['angry'] = 0.1*speech_result['emotion']['angry'] + 0.9* result['emotion']['angry'] 
-    temp['emotion']['disgust'] = 0.1*speech_result['emotion']['disgust'] + 0.9* result['emotion']['disgust'] 
-    temp['emotion']['fear'] = 0.1*speech_result['emotion']['fear'] + 0.9* result['emotion']['fear'] 
+    temp['emotion']['angry'] = 0.1*speech_result['emotion']['angry'] + 0.7* result['emotion']['angry'] + 0.2*body_result['emotion']['angry']
+    temp['emotion']['disgust'] = 0.1*speech_result['emotion']['disgust'] + 0.7* result['emotion']['disgust'] + 0.2*body_result['emotion']['disgust']
+    temp['emotion']['fear'] = 0.1*speech_result['emotion']['fear'] + 0.7* result['emotion']['fear'] + 0.2*body_result['emotion']['fear']
     temp['dominant_emotion'] = result['dominant_emotion']
-    temp['emotion']['happy'] = 0.1*speech_result['emotion']['happy'] + 0.9* result['emotion']['happy'] 
-    temp['emotion']['sad'] = 0.1*speech_result['emotion']['sad'] + 0.9* result['emotion']['sad'] 
-    temp['emotion']['neutral'] = 0.1*speech_result['emotion']['neutral'] + 0.9* result['emotion']['neutral'] 
-    temp['emotion']['surprise'] = 0.1*speech_result['emotion']['surprise'] + 0.9* result['emotion']['surprise']
+    temp['emotion']['happy'] = 0.1*speech_result['emotion']['happy'] + 0.7* result['emotion']['happy'] + 0.2*body_result['emotion']['happy']
+    temp['emotion']['sad'] = 0.1*speech_result['emotion']['sad'] + 0.7* result['emotion']['sad'] + 0.2*body_result['emotion']['sad']
+    temp['emotion']['neutral'] = 0.1*speech_result['emotion']['neutral'] + 0.7* result['emotion']['neutral'] + 0.2*body_result['emotion']['neutral']
+    temp['emotion']['surprise'] = 0.1*speech_result['emotion']['surprise'] + 0.7* result['emotion']['surprise'] + 0.2*body_result['emotion']['surprise']
     return temp
 
     
     
 
 # SETTINGS
-MASK_MODEL_PATH = os.getcwd()+"\\model\\emotion_model.h5"
+MASK_MODEL_PATH = os.getcwd()+"\\model\\face_model.h5"
+BODY_MODEL_PATH = os.getcwd()+"\\model\\body_model.h5"
 FACE_MODEL_PATH = os.getcwd()+"\\face_detector"
 SOUND_PATH = os.getcwd()+"\\sounds\\alarm.wav"
 THRESHOLD = 0.5
@@ -103,6 +107,7 @@ THRESHOLD = 0.5
 # mixer.init()
 # sound = mixer.Sound(SOUND_PATH)
 
+ 
 # load our serialized face detector model from disk
 print("[INFO] loading face detector model...")
 prototxtPath = os.path.sep.join([FACE_MODEL_PATH, "deploy.prototxt"])
@@ -120,6 +125,9 @@ print("[INFO] !!! starting video stream camera ...")
 faceCascade = cv2.CascadeClassifier(
     cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
+bodyCascade = cv2.CascadeClassifier(
+    cv2.data.haarcascades + 'haarcascade_upperbody.xml')
+
 cap = cv2.VideoCapture()
 
 if not cap.isOpened():
@@ -135,8 +143,6 @@ while True:
     detector.detect_emotions(frame)
     result = DeepFace.analyze(frame, actions=['emotion'])
 #
-
-
     # result =  face_processor(frame, faceNet, maskNet,threshold)
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
@@ -165,7 +171,7 @@ while True:
     font = cv2.FONT_HERSHEY_SIMPLEX
 
      # print(result)
-    final_result = weighted_average(speech_result,result)
+    final_result = weighted_average(speech_result,body_result,result)
     print('[DETECTED EMOTION] : ' , final_result['emotion'])
     print('[DOMINANT EMOTION] : ' , final_result['dominant_emotion'] , ' ' , final_result['emotion'][final_result['dominant_emotion']])
 

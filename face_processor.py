@@ -71,7 +71,4 @@ def detect_and_predict_mask(frame, faceNet, maskNet, threshold=0.5):
             # print(maskNet.predict(face)[0].tolist())
             preds.append(maskNet.predict(face)[0].tolist())
 
-    detector = FER()
-    detector.detect_emotions(frame)
-    face_result = DeepFace.analyze(frame, actions=['emotion'])
-    return (locs, preds, face_result)
+    return (locs, preds)
